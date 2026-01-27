@@ -5,7 +5,7 @@ Never hit rate limits again. Monitor API quotas across OpenAI, Stripe, GitHub, a
 ## 🚀 Quick Start
 
 ```bash
-npm install -g api-quota-watch
+npm install -g @gwthm/api-quota-watch
 aqw add
 aqw monitor
 ```
@@ -21,7 +21,7 @@ aqw monitor
 ## Installation
 
 ```bash
-npm install -g api-quota-watch
+npm install -g @gwthm/api-quota-watch
 ```
 
 ## Usage
