@@ -17,7 +17,7 @@ async function monitor(options) {
 
     if (Object.keys(apis).length === 0) {
         console.log(chalk.yellow('\n⚠️  No APIs configured.'));
-        console.log(chalk.gray(`Run ${chalk.cyan('api-quota-watch add')} to add an API.\n`));
+        console.log(chalk.gray(`Run ${chalk.cyan('aqw add')} to add an API.\n`));
         return;
     }
 

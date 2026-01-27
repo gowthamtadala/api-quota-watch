@@ -65,7 +65,7 @@ async function add() {
         });
 
         console.log(chalk.green(`\n✅ ${PROVIDERS[answers.provider].name} added successfully!`));
-        console.log(chalk.gray(`\nRun ${chalk.cyan('api-quota-watch monitor')} to check quota status.\n`));
+        console.log(chalk.gray(`\nRun ${chalk.cyan('aqw monitor')} to check quota status.\n`));
 
     } catch (error) {
         spinner.warn('Could not validate API key');
@@ -85,7 +85,7 @@ async function add() {
                 alias: answers.alias || answers.provider
             });
             console.log(chalk.green(`\n✅ ${PROVIDERS[answers.provider].name} added!`));
-            console.log(chalk.gray(`\nRun ${chalk.cyan('api-quota-watch monitor')} to check quota status.\n`));
+            console.log(chalk.gray(`\nRun ${chalk.cyan('aqw monitor')} to check quota status.\n`));
         } else {
             console.log(chalk.gray('\nCancelled.\n'));
             process.exit(0);
