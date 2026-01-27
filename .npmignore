@@ -1,0 +1,7 @@
+tests/
+*.test.js
+.env
+.DS_Store
+docs/
+.git/
+.vscode/
