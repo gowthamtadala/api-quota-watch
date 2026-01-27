@@ -68,9 +68,28 @@ async function add() {
         console.log(chalk.gray(`\nRun ${chalk.cyan('api-quota-watch monitor')} to check quota status.\n`));
 
     } catch (error) {
-        spinner.fail('Validation failed');
-        console.log(chalk.red(`\n❌ Error: ${error.message}\n`));
-        process.exit(1);
+        spinner.warn('Could not validate API key');
+        console.log(chalk.yellow(`\n⚠️  Warning: ${error.message}`));
+
+        const proceed = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'addAnyway',
+                message: 'Add API anyway? (You can validate it later)',
+                default: true
+            }
+        ]);
+
+        if (proceed.addAnyway) {
+            storage.addAPI(answers.provider, answers.apiKey, {
+                alias: answers.alias || answers.provider
+            });
+            console.log(chalk.green(`\n✅ ${PROVIDERS[answers.provider].name} added!`));
+            console.log(chalk.gray(`\nRun ${chalk.cyan('api-quota-watch monitor')} to check quota status.\n`));
+        } else {
+            console.log(chalk.gray('\nCancelled.\n'));
+            process.exit(0);
+        }
     }
 }
 

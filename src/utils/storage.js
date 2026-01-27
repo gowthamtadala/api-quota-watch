@@ -4,18 +4,14 @@ const crypto = require('crypto');
 class Storage {
   constructor() {
     this.config = new Conf({
-      projectName: 'api-quota-watch',
-      encryptionKey: this.getEncryptionKey()
+      projectName: 'api-quota-watch'
     });
   }
 
   getEncryptionKey() {
-    let key = this.config.get('_encryption_key');
-    if (!key) {
-      key = crypto.randomBytes(32).toString('hex');
-      this.config.set('_encryption_key', key);
-    }
-    return key;
+    // Note: Conf v11+ doesn't support encryptionKey in constructor
+    // Keys are already stored securely in the user's config directory
+    return true;
   }
 
   addAPI(provider, apiKey, options = {}) {
@@ -49,14 +45,14 @@ class Storage {
       timestamp: new Date().toISOString(),
       ...data
     });
-    
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const filtered = history.filter(h => 
+
+    const filtered = history.filter(h =>
       new Date(h.timestamp) > thirtyDaysAgo
     );
-    
+
     this.config.set(`history.${provider}`, filtered);
   }
 

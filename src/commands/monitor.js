@@ -52,14 +52,19 @@ async function checkAllQuotas() {
 
             storage.saveQuotaHistory(provider, quota);
 
-            const formatted = formatter.formatQuotaStatus(provider, quota);
-            results.push(formatted);
+            // Check if quota data is available
+            if (quota.limit === 0) {
+                console.log(chalk.yellow(`   ${quota.details?.note || 'Quota data not available'}`));
+            } else {
+                const formatted = formatter.formatQuotaStatus(provider, quota);
+                results.push(formatted);
 
-            const percentage = (quota.used / quota.limit) * 100;
-            const alertConfig = alerts[provider];
+                const percentage = (quota.used / quota.limit) * 100;
+                const alertConfig = alerts[provider];
 
-            if (alertConfig && percentage >= alertConfig.threshold) {
-                console.log(chalk.red(`\n🚨 ALERT: ${provider} is at ${percentage.toFixed(1)}% (threshold: ${alertConfig.threshold}%)`));
+                if (alertConfig && percentage >= alertConfig.threshold) {
+                    console.log(chalk.red(`\n🚨 ALERT: ${provider} is at ${percentage.toFixed(1)}% (threshold: ${alertConfig.threshold}%)`));
+                }
             }
 
         } catch (error) {
