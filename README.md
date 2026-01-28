@@ -1,5 +1,9 @@
 # 🚀 API Quota Watch
 
+[![npm version](https://badge.fury.io/js/%40gwthm%2Fapi-quota-watch.svg)](https://www.npmjs.com/package/@gwthm/api-quota-watch)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/gowthamtadala/api-quota-watch?style=social)](https://github.com/gowthamtadala/api-quota-watch/stargazers)
+
 Never hit rate limits again. Monitor API quotas across OpenAI, Stripe, GitHub, and more from your terminal.
 
 ## 🚀 Quick Start
