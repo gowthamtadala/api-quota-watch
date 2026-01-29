@@ -1,6 +1,6 @@
 {
   "name": "@gwthm/api-quota-watch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Monitor API rate limits and quotas across multiple providers",
   "main": "src/index.js",
   "bin": {
