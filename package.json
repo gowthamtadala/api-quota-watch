@@ -25,6 +25,14 @@
   ],
   "author": "Gowtham Krishna Tadala",
   "license": "MIT",
+  "homepage": "https://apiquotawatch.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gowthamtadala/api-quota-watch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gowthamtadala/api-quota-watch/issues"
+  },
   "dependencies": {
     "axios": "^1.6.0",
     "chalk": "^4.1.2",
