@@ -1,6 +1,6 @@
 {
   "name": "@gwthm/api-quota-watch",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Monitor API rate limits and quotas across multiple providers",
   "main": "src/index.js",
   "bin": {
@@ -19,9 +19,16 @@
     "monitoring",
     "cli",
     "openai",
+    "anthropic",
+    "claude",
+    "groq",
+    "mistral",
+    "openrouter",
     "stripe",
     "github",
-    "developer-tools"
+    "ai-spend",
+    "developer-tools",
+    "governance"
   ],
   "author": "Gowtham Krishna Tadala",
   "license": "MIT",
@@ -42,6 +49,7 @@
     "date-fns": "^3.0.0",
     "dotenv": "^16.3.1",
     "inquirer": "^8.2.5",
+    "node-cron": "^3.0.3",
     "ora": "^5.4.1"
   },
   "devDependencies": {

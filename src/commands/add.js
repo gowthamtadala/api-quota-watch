@@ -1,31 +1,59 @@
 const inquirer = require('inquirer');
-const chalk = require('chalk');
-const ora = require('ora');
-const storage = require('../utils/storage');
-const OpenAIProvider = require('../providers/openai');
-const StripeProvider = require('../providers/stripe');
-const GitHubProvider = require('../providers/github');
+const chalk    = require('chalk');
+const ora      = require('ora');
+const storage  = require('../utils/storage');
+const OpenAIProvider    = require('../providers/openai');
+const AnthropicProvider = require('../providers/anthropic');
+const GroqProvider      = require('../providers/groq');
+const MistralProvider   = require('../providers/mistral');
+const OpenRouterProvider = require('../providers/openrouter');
+const StripeProvider    = require('../providers/stripe');
+const GitHubProvider    = require('../providers/github');
 
 const PROVIDERS = {
+    // ── AI / LLM ──────────────────────────────────────────────────────────────
     openai: {
-        name: 'OpenAI',
+        name:      'OpenAI',
         keyFormat: 'sk-...',
-        class: OpenAIProvider
+        class:     OpenAIProvider
     },
+    anthropic: {
+        name:      'Anthropic (Claude)',
+        keyFormat: 'sk-ant-...',
+        class:     AnthropicProvider
+    },
+    groq: {
+        name:      'Groq',
+        keyFormat: 'gsk_...',
+        class:     GroqProvider
+    },
+    mistral: {
+        name:      'Mistral AI',
+        keyFormat: 'your Mistral API key',
+        class:     MistralProvider
+    },
+    openrouter: {
+        name:      'OpenRouter',
+        keyFormat: 'sk-or-...',
+        class:     OpenRouterProvider
+    },
+    // ── Developer APIs ────────────────────────────────────────────────────────
     stripe: {
-        name: 'Stripe',
+        name:      'Stripe',
         keyFormat: 'sk_live_... or sk_test_...',
-        class: StripeProvider
+        class:     StripeProvider
     },
     github: {
-        name: 'GitHub',
+        name:      'GitHub',
         keyFormat: 'ghp_...',
-        class: GitHubProvider
+        class:     GitHubProvider
     }
 };
 
 async function add() {
     console.log(chalk.bold.cyan('\n🔐 Add API to Monitor\n'));
+
+    const existingApis = storage.getAPIs();
 
     const answers = await inquirer.prompt([
         {
@@ -33,7 +61,7 @@ async function add() {
             name: 'provider',
             message: 'Select API provider:',
             choices: Object.keys(PROVIDERS).map(key => ({
-                name: `${PROVIDERS[key].name} (${PROVIDERS[key].keyFormat})`,
+                name: `${PROVIDERS[key].name}  ${chalk.gray('(' + PROVIDERS[key].keyFormat + ')')}`,
                 value: key
             }))
         },
@@ -46,8 +74,8 @@ async function add() {
         {
             type: 'input',
             name: 'alias',
-            message: 'Enter alias (optional):',
-            default: ''
+            message: 'Alias (e.g. your name or project, optional):',
+            default: (ans) => existingApis[ans.provider]?.alias || ''
         }
     ]);
 
