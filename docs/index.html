@@ -3,377 +3,890 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Quota Watch - Never Hit Rate Limits Again</title>
-    <meta name="description" content="Monitor API rate limits and quotas across OpenAI, Stripe, GitHub, and more. Free CLI tool for developers.">
-    
+    <title>API Quota Watch — Monitor AI & API Spend from Your Terminal</title>
+    <meta name="description" content="Monitor API rate limits and quotas across OpenAI, Anthropic, Groq, Mistral, OpenRouter, Stripe, GitHub and more. Free open-source CLI for developers.">
+    <meta property="og:title" content="API Quota Watch — Never Hit Rate Limits Again">
+    <meta property="og:description" content="Monitor AI & API spend across 7 providers. Sparkline history, Slack alerts, structured export. Free CLI tool.">
+    <meta property="og:url" content="https://apiquotawatch.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:        #0a0b0f;
+            --bg2:       #11131a;
+            --bg3:       #181b26;
+            --border:    rgba(255,255,255,0.07);
+            --accent:    #7c6cf8;
+            --accent2:   #a78bfa;
+            --green:     #34d399;
+            --yellow:    #fbbf24;
+            --red:       #f87171;
+            --text:      #e2e8f0;
+            --muted:     #64748b;
+            --card-bg:   rgba(255,255,255,0.04);
         }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
+        /* ── Noise texture overlay ───────────────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
         }
 
-        /* Header */
+        .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+        /* ── Header ─────────────────────────────────────────────────────── */
         header {
-            padding: 20px 0;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10,11,15,0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
         }
 
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        nav { display: flex; justify-content: space-between; align-items: center; }
 
         .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
         }
+
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links { display: flex; gap: 32px; align-items: center; }
 
         .nav-links a {
-            color: white;
+            color: var(--muted);
             text-decoration: none;
-            margin-left: 30px;
-            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
         }
 
-        .nav-links a:hover {
-            opacity: 0.8;
+        .nav-links a:hover { color: var(--text); }
+
+        .nav-cta {
+            background: var(--accent);
+            color: white !important;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 600 !important;
         }
 
-        /* Hero Section */
+        .nav-cta:hover { background: var(--accent2) !important; color: white !important; }
+
+        /* ── Hero ────────────────────────────────────────────────────────── */
         .hero {
             text-align: center;
-            padding: 100px 0;
-            color: white;
+            padding: 100px 0 80px;
+            position: relative;
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse at center, rgba(124,108,248,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(124,108,248,0.12);
+            border: 1px solid rgba(124,108,248,0.3);
+            color: var(--accent2);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-bottom: 28px;
+            letter-spacing: 0.3px;
         }
 
         h1 {
-            font-size: 48px;
+            font-size: clamp(36px, 6vw, 68px);
+            font-weight: 800;
+            line-height: 1.1;
             margin-bottom: 20px;
-            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, rgba(167,139,250,0.9) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .subtitle {
-            font-size: 24px;
-            margin-bottom: 40px;
-            opacity: 0.9;
+            font-size: clamp(16px, 2vw, 20px);
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto 48px;
+            line-height: 1.7;
         }
 
+        /* ── Terminal install box ────────────────────────────────────────── */
         .install-box {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px 30px;
-            border-radius: 10px;
-            display: inline-block;
-            margin: 20px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 40px;
+            box-shadow: 0 0 0 1px rgba(124,108,248,0.1), 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .install-label {
+            background: var(--bg3);
+            color: var(--muted);
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            border-right: 1px solid var(--border);
         }
 
         .install-command {
-            font-family: 'Courier New', monospace;
-            font-size: 18px;
-            color: #4ade80;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            color: var(--green);
+            padding: 14px 20px;
             user-select: all;
+            cursor: text;
         }
 
-        .copy-button {
-            background: #4ade80;
-            color: #1a1a1a;
+        .copy-btn {
+            background: rgba(124,108,248,0.15);
             border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            margin-left: 15px;
+            border-left: 1px solid var(--border);
+            color: var(--accent2);
+            padding: 14px 20px;
             cursor: pointer;
+            font-size: 13px;
             font-weight: 600;
-            transition: transform 0.2s;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s;
+            white-space: nowrap;
         }
 
-        .copy-button:hover {
-            transform: scale(1.05);
-        }
+        .copy-btn:hover { background: rgba(124,108,248,0.25); }
 
-        .cta-buttons {
-            margin-top: 30px;
-        }
+        .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
         .btn {
-            display: inline-block;
-            padding: 15px 40px;
-            margin: 10px;
-            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            border-radius: 10px;
             text-decoration: none;
             font-weight: 600;
-            transition: transform 0.3s, box-shadow 0.3s;
+            font-size: 15px;
+            transition: all 0.2s;
         }
 
         .btn-primary {
-            background: white;
-            color: #667eea;
-        }
-
-        .btn-secondary {
-            background: transparent;
+            background: var(--accent);
             color: white;
-            border: 2px solid white;
+            box-shadow: 0 4px 20px rgba(124,108,248,0.35);
         }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        .btn-primary:hover {
+            background: var(--accent2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(124,108,248,0.45);
         }
 
-        /* Features Section */
-        .features {
-            background: white;
-            padding: 80px 0;
+        .btn-ghost {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
         }
 
-        .features h2 {
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-2px);
+        }
+
+        /* ── Terminal preview ────────────────────────────────────────────── */
+        .terminal-section { padding: 40px 0 80px; }
+
+        .terminal {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            max-width: 740px;
+            margin: 0 auto;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,108,248,0.08);
+        }
+
+        .terminal-bar {
+            background: var(--bg3);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red    { background: #ff5f57; }
+        .dot-yellow { background: #febc2e; }
+        .dot-green  { background: #28c840; }
+
+        .terminal-title {
+            flex: 1;
             text-align: center;
-            font-size: 36px;
-            margin-bottom: 60px;
-            color: #1a1a1a;
+            font-size: 12px;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
         }
+
+        .terminal-body {
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .t-prompt { color: var(--accent2); }
+        .t-cmd    { color: var(--text); }
+        .t-green  { color: var(--green); }
+        .t-yellow { color: var(--yellow); }
+        .t-red    { color: var(--red); }
+        .t-gray   { color: var(--muted); }
+        .t-cyan   { color: #67e8f9; }
+        .t-bold   { font-weight: 600; }
+        .t-bar-g  { color: var(--green); }
+        .t-bar-y  { color: var(--yellow); }
+
+        /* ── Providers ───────────────────────────────────────────────────── */
+        .providers-section { padding: 80px 0; border-top: 1px solid var(--border); }
+
+        .section-label {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .section-sub {
+            text-align: center;
+            color: var(--muted);
+            max-width: 520px;
+            margin: 0 auto 56px;
+            font-size: 16px;
+        }
+
+        .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .provider-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .provider-card:hover {
+            border-color: rgba(124,108,248,0.35);
+            background: rgba(124,108,248,0.06);
+            transform: translateY(-3px);
+        }
+
+        .provider-emoji { font-size: 28px; margin-bottom: 10px; }
+        .provider-name  { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .provider-desc  { color: var(--muted); font-size: 12px; }
+
+        .provider-tag {
+            display: inline-block;
+            background: rgba(52,211,153,0.12);
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── Features ────────────────────────────────────────────────────── */
+        .features-section { padding: 80px 0; border-top: 1px solid var(--border); }
 
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
+            gap: 20px;
         }
 
         .feature-card {
-            text-align: center;
-            padding: 30px;
-            border-radius: 10px;
-            background: #f8f9fa;
-            transition: transform 0.3s;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.25s;
         }
 
         .feature-card:hover {
-            transform: translateY(-10px);
+            border-color: rgba(124,108,248,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
         }
 
-        .feature-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
+        .feature-icon-wrap {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            margin-bottom: 18px;
         }
 
-        .feature-card h3 {
-            margin-bottom: 15px;
-            color: #667eea;
+        .feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+        .feature-card p  { color: var(--muted); font-size: 14px; line-height: 1.7; }
+
+        /* ── Commands ────────────────────────────────────────────────────── */
+        .commands-section { padding: 80px 0; border-top: 1px solid var(--border); }
+
+        .commands-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+
+        .command-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+            transition: border-color 0.2s;
         }
 
-        /* How It Works */
-        .how-it-works {
-            padding: 80px 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .command-row:hover { border-color: rgba(124,108,248,0.3); }
+
+        .command-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .how-it-works h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 60px;
-        }
+        .command-desc { color: var(--muted); font-size: 13px; }
 
-        .steps {
+        /* ── How it works ────────────────────────────────────────────────── */
+        .steps-section { padding: 80px 0; border-top: 1px solid var(--border); }
+
+        .steps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            position: relative;
         }
 
-        .step {
-            text-align: center;
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
         }
 
-        .step-number {
-            width: 60px;
-            height: 60px;
-            background: white;
-            color: #667eea;
-            border-radius: 50%;
-            display: inline-flex;
+        .step-num {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .step-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .step-card p  { color: var(--muted); font-size: 14px; }
+
+        .step-cmd {
+            display: inline-block;
+            margin-top: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent2);
+            background: rgba(124,108,248,0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        /* ── Stats bar ───────────────────────────────────────────────────── */
+        .stats-section {
+            padding: 60px 0;
+            background: linear-gradient(135deg, rgba(124,108,248,0.08), rgba(167,139,250,0.05));
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 40px; text-align: center; }
+
+        .stat-num {
+            font-size: 40px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+        /* ── Footer ──────────────────────────────────────────────────────── */
+        footer { padding: 48px 0; border-top: 1px solid var(--border); }
+
+        .footer-inner {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        /* Footer */
-        footer {
-            background: #1a1a1a;
-            color: white;
+            gap: 24px;
             text-align: center;
-            padding: 40px 0;
         }
 
-        .social-links {
-            margin: 20px 0;
-        }
+        .footer-links { display: flex; gap: 28px; }
 
-        .social-links a {
-            color: white;
+        .footer-links a {
+            color: var(--muted);
             text-decoration: none;
-            margin: 0 15px;
-            font-size: 18px;
-            transition: color 0.3s;
+            font-size: 14px;
+            transition: color 0.2s;
         }
 
-        .social-links a:hover {
-            color: #4ade80;
+        .footer-links a:hover { color: var(--text); }
+
+        .footer-copy { color: var(--muted); font-size: 13px; }
+
+        /* ── Animations ─────────────────────────────────────────────────── */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
         }
 
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 32px;
-            }
+        .live-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+            margin-right: 6px;
+        }
 
-            .subtitle {
-                font-size: 18px;
-            }
-
-            .nav-links {
-                display: none;
-            }
+        /* ── Responsive ──────────────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .nav-links { display: none; }
+            .hero { padding: 72px 0 56px; }
+            .install-command { font-size: 12px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">🚀 API Quota Watch</div>
-                <div class="nav-links">
-                    <a href="#features">Features</a>
-                    <a href="#how-it-works">How It Works</a>
-                    <a href="https://github.com/gowthamtadala/api-quota-watch">GitHub</a>
-                    <a href="https://www.npmjs.com/package/@gwthm/api-quota-watch">npm</a>
-                </div>
-            </nav>
-        </div>
-    </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1>Never Hit API Rate Limits Again</h1>
-            <p class="subtitle">Monitor quota usage across OpenAI, Stripe, GitHub, and more from your terminal</p>
-            
-            <div class="install-box">
-                <code class="install-command">npm install -g @gwthm/api-quota-watch</code>
-                <button class="copy-button" onclick="copyInstallCommand()">Copy</button>
+<!-- ── Header ────────────────────────────────────────────────────────────── -->
+<header>
+    <div class="container">
+        <nav>
+            <a href="/" class="logo">
+                <div class="logo-icon">📡</div>
+                API Quota Watch
+                <span class="badge">v0.2.0</span>
+            </a>
+            <div class="nav-links">
+                <a href="#providers">Providers</a>
+                <a href="#features">Features</a>
+                <a href="#commands">Commands</a>
+                <a href="https://github.com/gowthamtadala/api-quota-watch">GitHub</a>
+                <a href="https://www.npmjs.com/package/@gwthm/api-quota-watch" class="nav-cta">Install →</a>
             </div>
+        </nav>
+    </div>
+</header>
 
-            <div class="cta-buttons">
-                <a href="https://github.com/gowthamtadala/api-quota-watch" class="btn btn-primary">View on GitHub</a>
-                <a href="https://www.npmjs.com/package/@gwthm/api-quota-watch" class="btn btn-secondary">npm Package</a>
-            </div>
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-glow"></div>
+    <div class="container">
+        <div class="hero-tag">
+            <span class="live-dot"></span>
+            Open Source · MIT License · 7 Providers
         </div>
-    </section>
 
-    <section class="features" id="features">
-        <div class="container">
-            <h2>Why API Quota Watch?</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Cross-Platform</h3>
-                    <p>Works on Windows, macOS, and Linux. Monitor your APIs anywhere.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Multi-API Support</h3>
-                    <p>OpenAI, Stripe, GitHub, and more. One tool for all your APIs.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔔</div>
-                    <h3>Proactive Alerts</h3>
-                    <p>Get notified before hitting limits. Prevent costly downtime.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Historical Tracking</h3>
-                    <p>30-day quota history. See trends and plan ahead.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔐</div>
-                    <h3>Secure Storage</h3>
-                    <p>API keys encrypted locally. Your credentials stay on your machine.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🆓</div>
-                    <h3>Free & Open Source</h3>
-                    <p>MIT licensed. Use it anywhere, modify it however you want.</p>
-                </div>
-            </div>
+        <h1>Never Hit API<br>Rate Limits Again</h1>
+
+        <p class="subtitle">
+            Monitor AI spend and API quotas across OpenAI, Anthropic, Groq, Mistral, OpenRouter,
+            Stripe and GitHub — from a single terminal command.
+        </p>
+
+        <div class="install-box">
+            <span class="install-label">$</span>
+            <code class="install-command" id="installCmd">npm install -g @gwthm/api-quota-watch</code>
+            <button class="copy-btn" id="copyBtn" onclick="copyInstall()">Copy</button>
         </div>
-    </section>
 
-    <section class="how-it-works" id="how-it-works">
-        <div class="container">
-            <h2>How It Works</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Install</h3>
-                    <p>Install globally via npm in seconds</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Add APIs</h3>
-                    <p>Configure your API keys securely</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Monitor</h3>
-                    <p>Check quotas anytime with a simple command</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <h3>Stay Safe</h3>
-                    <p>Get alerts before hitting limits</p>
-                </div>
+        <div class="hero-actions">
+            <a href="https://github.com/gowthamtadala/api-quota-watch" class="btn btn-primary">
+                ⭐ Star on GitHub
+            </a>
+            <a href="https://www.npmjs.com/package/@gwthm/api-quota-watch" class="btn btn-ghost">
+                📦 View on npm
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Terminal Preview ───────────────────────────────────────────────────── -->
+<section class="terminal-section">
+    <div class="container">
+        <div class="terminal">
+            <div class="terminal-bar">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+                <div class="terminal-title">aqw monitor</div>
+            </div>
+            <div class="terminal-body">
+                <div><span class="t-prompt">❯</span> <span class="t-cmd">aqw monitor</span></div>
+                <br>
+                <div><span class="t-green t-bold">✔</span> <span class="t-gray">openai checked</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bold">openai</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bar-g">████████░░░░░░░░</span> <span class="t-green">48.2%</span> <span class="t-gray">(48.20/100 USD)</span></div>
+                <div>&nbsp;&nbsp;<span class="t-cyan">⚡ At current pace: limit in ~18 days</span></div>
+                <br>
+                <div><span class="t-green t-bold">✔</span> <span class="t-gray">anthropic checked</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bold">anthropic</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bar-g">██░░░░░░░░░░░░░░</span> <span class="t-green">12.0%</span> <span class="t-gray">(12,000/100,000 tokens/min)</span></div>
+                <br>
+                <div><span class="t-green t-bold">✔</span> <span class="t-gray">groq checked</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bold">groq</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bar-y">████████████░░░░</span> <span class="t-yellow">82.5%</span> <span class="t-gray">(82,500/100,000 tokens/min)</span></div>
+                <div>&nbsp;&nbsp;<span class="t-yellow">⚡ At current pace: limit in ~6 days</span></div>
+                <br>
+                <div><span class="t-green t-bold">✔</span> <span class="t-gray">github checked</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bold">github</span></div>
+                <div>&nbsp;&nbsp;<span class="t-bar-g">█░░░░░░░░░░░░░░░</span> <span class="t-green">8.0%</span> <span class="t-gray">(400/5,000 requests/hour)</span></div>
+                <br>
+                <div><span class="t-bold">Overall: </span><span class="t-green">🟢 3 healthy</span> <span class="t-gray">·</span> <span class="t-yellow">🟡 1 warning</span></div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 API Quota Watch by Gowtham Krishna Tadala</p>
-            <div class="social-links">
+<!-- ── Stats ──────────────────────────────────────────────────────────────── -->
+<section class="stats-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div>
+                <div class="stat-num">7</div>
+                <div class="stat-label">API Providers</div>
+            </div>
+            <div>
+                <div class="stat-num">9</div>
+                <div class="stat-label">CLI Commands</div>
+            </div>
+            <div>
+                <div class="stat-num">30d</div>
+                <div class="stat-label">History Retention</div>
+            </div>
+            <div>
+                <div class="stat-num">MIT</div>
+                <div class="stat-label">License · Free Forever</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Providers ──────────────────────────────────────────────────────────── -->
+<section class="providers-section" id="providers">
+    <div class="container">
+        <p class="section-label">Supported Providers</p>
+        <h2 class="section-title">All your AI tools. One command.</h2>
+        <p class="section-sub">From billing quotas to per-minute token limits — aqw surfaces the number that matters before it bites you.</p>
+
+        <div class="provider-grid">
+            <div class="provider-card">
+                <div class="provider-emoji">🤖</div>
+                <div class="provider-name">OpenAI</div>
+                <div class="provider-desc">Monthly billing vs. hard limit</div>
+                <div class="provider-tag">USD spend</div>
+            </div>
+            <div class="provider-card">
+                <div class="provider-emoji">🧠</div>
+                <div class="provider-name">Anthropic</div>
+                <div class="provider-desc">Token & request rate limits</div>
+                <div class="provider-tag">tokens/min</div>
+            </div>
+            <div class="provider-card">
+                <div class="provider-emoji">⚡</div>
+                <div class="provider-name">Groq</div>
+                <div class="provider-desc">Ultra-fast inference limits</div>
+                <div class="provider-tag">tokens/min</div>
+            </div>
+            <div class="provider-card">
+                <div class="provider-emoji">🌊</div>
+                <div class="provider-name">Mistral AI</div>
+                <div class="provider-desc">Token & request rate limits</div>
+                <div class="provider-tag">tokens/min</div>
+            </div>
+            <div class="provider-card">
+                <div class="provider-emoji">🔀</div>
+                <div class="provider-name">OpenRouter</div>
+                <div class="provider-desc">Credit balance & spending cap</div>
+                <div class="provider-tag">USD balance</div>
+            </div>
+            <div class="provider-card">
+                <div class="provider-emoji">💳</div>
+                <div class="provider-name">Stripe</div>
+                <div class="provider-desc">Rate limits per second</div>
+                <div class="provider-tag">req/sec</div>
+            </div>
+            <div class="provider-card">
+                <div class="provider-emoji">🐙</div>
+                <div class="provider-name">GitHub</div>
+                <div class="provider-desc">Core API request quota</div>
+                <div class="provider-tag">5,000/hr</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Features ───────────────────────────────────────────────────────────── -->
+<section class="features-section" id="features">
+    <div class="container">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Built for developers who are tired of surprises</h2>
+        <p class="section-sub" style="margin-bottom: 48px;">Everything you need to stay ahead of rate limits — nothing you don't.</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon-wrap" style="background: rgba(52,211,153,0.12)">📈</div>
+                <h3>Sparkline History</h3>
+                <p>30-day ASCII trend charts with min/avg/max and directional arrows. See patterns before they become problems.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap" style="background: rgba(251,191,36,0.1)">⚡</div>
+                <h3>Burn Rate Projection</h3>
+                <p>"At current pace, limit in ~18 days." Calculated from your rolling history, not just today's snapshot.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap" style="background: rgba(124,108,248,0.12)">🔔</div>
+                <h3>Real Webhook Alerts</h3>
+                <p>Slack Block Kit and Discord embeds that actually fire when you cross a threshold. Plus a test-fire button.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap" style="background: rgba(103,232,249,0.1)">📊</div>
+                <h3>Structured Export</h3>
+                <p>Export to JSON or CSV with a canonical schema. Pipe into your own dashboard, script, or spreadsheet.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap" style="background: rgba(248,113,113,0.1)">🔐</div>
+                <h3>Local-only Storage</h3>
+                <p>Keys stored in your OS config directory. Zero telemetry, zero cloud, zero third-party involvement.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap" style="background: rgba(52,211,153,0.12)">👁️</div>
+                <h3>Watch Mode</h3>
+                <p>Continuous monitoring with <code style="font-family: JetBrains Mono; color: var(--accent2); font-size: 12px;">--watch --interval 5</code>. Live updates in your terminal without a script.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Commands ───────────────────────────────────────────────────────────── -->
+<section class="commands-section" id="commands">
+    <div class="container">
+        <p class="section-label">Commands</p>
+        <h2 class="section-title">Seven commands. Everything covered.</h2>
+        <p class="section-sub" style="margin-bottom: 48px;">Short, memorable, and composable.</p>
+
+        <div class="commands-grid">
+            <div class="command-row">
+                <div class="command-code">aqw add</div>
+                <div class="command-desc">Add an API key to monitor (interactive, 7 providers)</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw monitor</div>
+                <div class="command-desc">Live quota check with progress bars and burn rate</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw monitor --watch</div>
+                <div class="command-desc">Continuous monitoring at a configurable interval</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw history</div>
+                <div class="command-desc">30-day sparkline chart, min/avg/max, trend arrow</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw report</div>
+                <div class="command-desc">Structured terminal report (or --format json/csv)</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw alert</div>
+                <div class="command-desc">Configure Slack/Discord/webhook threshold alerts</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw list</div>
+                <div class="command-desc">List all configured providers</div>
+            </div>
+            <div class="command-row">
+                <div class="command-code">aqw remove</div>
+                <div class="command-desc">Remove a provider from monitoring</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── How it works ───────────────────────────────────────────────────────── -->
+<section class="steps-section" id="how-it-works">
+    <div class="container">
+        <p class="section-label">How It Works</p>
+        <h2 class="section-title">Up and running in 60 seconds</h2>
+        <p class="section-sub" style="margin-bottom: 48px;">No account. No dashboard. No config files. Just npm.</p>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <h3>Install</h3>
+                <p>One global npm install gives you the <code style="font-family: JetBrains Mono; color: var(--accent2); font-size: 12px;">aqw</code> command everywhere.</p>
+                <span class="step-cmd">npm i -g @gwthm/api-quota-watch</span>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <h3>Add your keys</h3>
+                <p>Interactive prompt walks you through adding any of the 7 supported providers.</p>
+                <span class="step-cmd">aqw add</span>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <h3>Monitor</h3>
+                <p>Check all quotas at once with progress bars, usage, and reset times.</p>
+                <span class="step-cmd">aqw monitor</span>
+            </div>
+            <div class="step-card">
+                <div class="step-num">4</div>
+                <h3>Set alerts</h3>
+                <p>Configure Slack or Discord webhooks that fire before you hit the wall.</p>
+                <span class="step-cmd">aqw alert</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer>
+    <div class="container">
+        <div class="footer-inner">
+            <div class="logo">
+                <div class="logo-icon">📡</div>
+                API Quota Watch
+                <span class="badge">v0.2.0</span>
+            </div>
+            <div class="footer-links">
                 <a href="https://github.com/gowthamtadala/api-quota-watch">GitHub</a>
                 <a href="https://www.npmjs.com/package/@gwthm/api-quota-watch">npm</a>
-                <a href="https://github.com/gowthamtadala">Developer</a>
+                <a href="https://github.com/gowthamtadala/api-quota-watch/issues">Issues</a>
+                <a href="https://github.com/gowthamtadala/api-quota-watch/blob/main/CONTRIBUTING.md">Contribute</a>
+                <a href="https://github.com/gowthamtadala">@gowthamtadala</a>
             </div>
-            <p>MIT Licensed | Open Source</p>
+            <div class="footer-copy">MIT License · Built with ❤️ by developers who got paged at 2am too many times.</div>
         </div>
-    </footer>
+    </div>
+</footer>
 
-    <script>
-        function copyInstallCommand() {
-            const command = 'npm install -g @gwthm/api-quota-watch';
-            navigator.clipboard.writeText(command).then(() => {
-                const button = document.querySelector('.copy-button');
-                button.textContent = 'Copied!';
-                setTimeout(() => {
-                    button.textContent = 'Copy';
-                }, 2000);
-            });
-        }
-    </script>
+<script>
+    function copyInstall() {
+        const text = document.getElementById('installCmd').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.textContent = '✓ Copied!';
+            btn.style.color = 'var(--green)';
+            setTimeout(() => {
+                btn.textContent = 'Copy';
+                btn.style.color = '';
+            }, 2000);
+        });
+    }
+
+    // Subtle entrance animation
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.style.opacity = '1';
+                e.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feature-card, .provider-card, .step-card, .command-row').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
+    });
+</script>
+
 </body>
 </html>
