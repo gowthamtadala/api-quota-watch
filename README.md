@@ -188,6 +188,40 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
+## ⚠️ GitHub Action
+
+Run quota checks inside CI and gate on usage thresholds. Keys come from GitHub Secrets — nothing interactive.
+
+```yaml
+- name: Check API quotas
+  id: quotas
+  uses: gowthamtadala/api-quota-watch@v1
+  with:
+    keys: '{"openai":"${{ secrets.OPENAI_API_KEY }}","anthropic":"${{ secrets.ANTHROPIC_API_KEY }}"}'
+    threshold: '90'   # optional, default 95
+
+- name: Fail if any quota is breached
+  if: steps.quotas.outputs.threshold-breached == 'true'
+  run: echo "API quota threshold breached" && exit 1
+```
+
+**Inputs**
+
+| Input | Required | Default | Description |
+|---|---|---|---|
+| `keys` | yes | — | JSON object mapping provider → API key. Providers: `openai`, `anthropic`, `groq`, `mistral`, `openrouter`, `stripe`, `github`. |
+| `version` | no | `latest` | Version of `@gwthm/api-quota-watch` to install from npm. |
+| `threshold` | no | `95` | Usage percent (0–100) at or above which a provider counts as breached. |
+
+**Outputs**
+
+| Output | Description |
+|---|---|
+| `report-json` | Quota report as JSON (same schema as `aqw report --format json`). |
+| `threshold-breached` | `true` if any provider's usage percent is at or above `threshold`, else `false`. |
+
+---
+
 ## 📄 License
 
 MIT — Built with ❤️ by developers who got paged at 2am too many times.
