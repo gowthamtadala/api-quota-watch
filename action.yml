@@ -1,0 +1,113 @@
+name: 'API Quota Watch'
+description: 'Check API rate limits and quotas (OpenAI, Anthropic, Groq, Mistral, OpenRouter, Stripe, GitHub) and emit a JSON report.'
+author: 'Gowtham Krishna Tadala'
+branding:
+  icon: 'activity'
+  color: 'blue'
+
+inputs:
+  keys:
+    description: "JSON object mapping provider to API key, e.g. '{\"openai\":\"sk-...\",\"anthropic\":\"sk-ant-...\"}'. Providers: openai, anthropic, groq, mistral, openrouter, stripe, github. Put the values in GitHub Secrets."
+    required: true
+  version:
+    description: 'Version of @gwthm/api-quota-watch to install from npm.'
+    required: false
+    default: 'latest'
+  threshold:
+    description: 'Usage percent (0-100) at or above which a provider counts as breached.'
+    required: false
+    default: '95'
+
+outputs:
+  report-json:
+    description: 'Quota report as JSON (same schema as `aqw report --format json`).'
+    value: ${{ steps.report.outputs.report-json }}
+  threshold-breached:
+    description: "'true' if any provider's usage percent is at or above the threshold, else 'false'."
+    value: ${{ steps.report.outputs.threshold-breached }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install API Quota Watch
+      shell: bash
+      run: npm install -g "@gwthm/api-quota-watch@${{ inputs.version }}"
+
+    - name: Write API keys to aqw config
+      shell: bash
+      env:
+        AQW_KEYS_JSON: ${{ inputs.keys }}
+      run: |
+        cat > "${RUNNER_TEMP}/aqw-write-config.js" <<'NODE_EOF'
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+
+        const keysJson = process.env.AQW_KEYS_JSON || '{}';
+        let keys;
+        try {
+          keys = JSON.parse(keysJson);
+        } catch (e) {
+          console.error('api-quota-watch action: `keys` input is not valid JSON');
+          process.exit(1);
+        }
+        const providers = Object.keys(keys);
+        if (providers.length === 0) {
+          console.error('api-quota-watch action: `keys` input contains no providers');
+          process.exit(1);
+        }
+
+        // Mirror the `conf` package path resolution (projectName: 'api-quota-watch', suffix: 'nodejs')
+        function configDir() {
+          const p = process.platform;
+          if (p === 'darwin') return path.join(os.homedir(), 'Library', 'Preferences', 'api-quota-watch-nodejs');
+          if (p === 'win32') return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'api-quota-watch-nodejs', 'Config');
+          return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'api-quota-watch-nodejs');
+        }
+
+        const dir = configDir();
+        fs.mkdirSync(dir, { recursive: true });
+        const now = new Date().toISOString();
+        const apis = {};
+        for (const provider of providers) {
+          apis[provider] = { apiKey: String(keys[provider]), addedAt: now, alias: provider };
+        }
+        fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ apis }, null, 2));
+        console.log(`api-quota-watch action: configured ${providers.length} provider(s): ${providers.join(', ')}`);
+        NODE_EOF
+        node "${RUNNER_TEMP}/aqw-write-config.js"
+
+    - name: Run quota report
+      id: report
+      shell: bash
+      env:
+        AQW_THRESHOLD: ${{ inputs.threshold }}
+      run: |
+        cat > "${RUNNER_TEMP}/aqw-eval-report.js" <<'NODE_EOF'
+        const fs = require('fs');
+        const out = process.env.GITHUB_OUTPUT;
+        const threshold = parseFloat(process.env.AQW_THRESHOLD || '95');
+        if (!out) { console.error('GITHUB_OUTPUT is not set'); process.exit(1); }
+        if (!(threshold >= 0 && threshold <= 100)) { console.error('threshold must be between 0 and 100'); process.exit(1); }
+        let report = { apis: [] };
+        const file = process.env.AQW_REPORT_FILE;
+        try { report = JSON.parse(fs.readFileSync(file, 'utf8')); }
+        catch (e) { console.error(`warning: could not read report file: ${e.message}`); }
+        const breached = (report.apis || []).some(a => Number(a.usedPercent) >= threshold);
+        const delim = 'AQW_EOF_' + Date.now().toString(36);
+        const lines = [];
+        lines.push(`report-json<<${delim}`);
+        lines.push(JSON.stringify(report));
+        lines.push(delim);
+        lines.push(`threshold-breached=${breached ? 'true' : 'false'}`);
+        fs.appendFileSync(out, lines.join('\n') + '\n');
+        console.log(`api-quota-watch action: threshold ${threshold}% — breached: ${breached}`);
+        NODE_EOF
+        REPORT_FILE="${RUNNER_TEMP}/aqw-report.json"
+        aqw report --format json --output "$REPORT_FILE"
+        AQW_REPORT_FILE="$REPORT_FILE" node "${RUNNER_TEMP}/aqw-eval-report.js"
